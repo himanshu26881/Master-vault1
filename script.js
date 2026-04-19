@@ -1,4 +1,4 @@
-import { db } from './firebase-config.js';
+import { db, auth } from './firebase-config.js';
 
 import {
     collection,
@@ -10,9 +10,13 @@ import {
     where
 } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
 
-// ❌ REMOVE Firebase Auth (you are not using it)
-// import { getAuth } from "firebase-auth";
-// const auth = getAuth();
+import {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail,
+    onAuthStateChanged,
+    signOut
+} from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 
 
 // INIT
@@ -23,7 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (document.querySelector('.dashboard-container')) {
-        initDashboard();
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                initDashboard(user);
+            } else {
+                window.location.href = "index.html";
+            }
+        });
     }
 });
 
@@ -31,106 +41,103 @@ document.addEventListener('DOMContentLoaded', () => {
 // ================= LOGIN =================
 function initLogin() {
 
-    const setupForm = document.getElementById('setup-form');
+    const signupForm = document.getElementById('setup-form');
     const loginForm = document.getElementById('login-form');
+    const forgotBtn = document.getElementById('forgot-btn');
 
-    // CREATE MASTER PASSWORD (FIRST TIME)
-    setupForm?.addEventListener('submit', (e) => {
+    // SIGNUP
+    signupForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const pass = document.getElementById('new-master').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('new-master').value;
 
-        if (!pass) {
-            alert("Enter password");
-            return;
+        try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            alert("Account Created ✅");
+            window.location.href = "dashboard.html";
+        } catch (err) {
+            alert(err.message);
         }
-
-        localStorage.setItem('masterPass', pass);
-
-        alert("Vault Created!");
-        window.location.reload(); // refresh to show login
     });
 
     // LOGIN
-    loginForm?.addEventListener('submit', (e) => {
+    loginForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const input = document.getElementById('master-password').value;
-        const saved = localStorage.getItem('masterPass');
+        const email = document.getElementById('email-login').value;
+        const password = document.getElementById('master-password').value;
 
-        if (!saved) {
-            alert("First create account!");
-            return;
-        }
-
-        if (input === saved) {
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
             window.location.href = "dashboard.html";
-        } else {
-            alert("Wrong password!");
+        } catch (err) {
+            alert("Login Failed: " + err.message);
+        }
+    });
+
+    // 🔥 FORGOT PASSWORD
+    forgotBtn?.addEventListener('click', async () => {
+        const email = prompt("Enter your registered email:");
+
+        if (!email) return;
+
+        try {
+            await sendPasswordResetEmail(auth, email);
+            alert("Password reset link sent to your email 📩");
+        } catch (err) {
+            alert(err.message);
         }
     });
 }
 
 
 // ================= DASHBOARD =================
-function initDashboard() {
+function initDashboard(user) {
 
     const form = document.getElementById('password-form');
     const grid = document.getElementById('passwords-grid');
     const logoutBtn = document.getElementById('logout-btn');
 
-    const userId = "local-user";
-
-    // LOAD PASSWORDS
     const loadPasswords = async () => {
-        try {
-            const q = query(collection(db, "passwords"), where("userId", "==", userId));
-            const snapshot = await getDocs(q);
+        const q = query(collection(db, "passwords"), where("userId", "==", user.uid));
+        const snapshot = await getDocs(q);
 
-            grid.innerHTML = "";
+        grid.innerHTML = "";
 
-            snapshot.forEach((d) => {
-                const data = d.data();
+        snapshot.forEach((d) => {
+            const data = d.data();
 
-                const card = document.createElement('div');
-                card.className = "password-card";
+            const card = document.createElement('div');
+            card.className = "password-card";
 
-                card.innerHTML = `
-                    <div class="card-header">
-                        <h4>${data.site}</h4>
-                        <div>
-                            <button class="icon-btn copy-btn">📋</button>
-                            <button class="icon-btn delete-btn">🗑️</button>
-                        </div>
+            card.innerHTML = `
+                <div class="card-header">
+                    <h4>${data.site}</h4>
+                    <div>
+                        <button class="icon-btn copy-btn">📋</button>
+                        <button class="icon-btn delete-btn">🗑️</button>
                     </div>
+                </div>
 
-                    <p>${data.username}</p>
-                    <p class="hidden-pass">••••••••</p>
-                `;
+                <p>${data.username}</p>
+                <p class="hidden-pass">••••••••</p>
+            `;
 
-                // COPY PASSWORD
-                card.querySelector('.copy-btn').onclick = () => {
-                    navigator.clipboard.writeText(data.password);
-                    alert("Copied!");
-                };
+            card.querySelector('.copy-btn').onclick = () => {
+                navigator.clipboard.writeText(data.password);
+                alert("Copied!");
+            };
 
-                // DELETE PASSWORD
-                card.querySelector('.delete-btn').onclick = async () => {
-                    await deleteDoc(doc(db, "passwords", d.id));
-                    loadPasswords();
-                };
+            card.querySelector('.delete-btn').onclick = async () => {
+                await deleteDoc(doc(db, "passwords", d.id));
+                loadPasswords();
+            };
 
-                grid.appendChild(card);
-            });
-
-            console.log("Loaded:", snapshot.size);
-
-        } catch (error) {
-            console.error("Load error:", error);
-        }
+            grid.appendChild(card);
+        });
     };
 
-    // SAVE PASSWORD
     form?.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -138,32 +145,19 @@ function initDashboard() {
         const username = document.getElementById('username').value;
         const password = document.getElementById('site-password').value;
 
-        if (!site || !username || !password) {
-            alert("Fill all fields");
-            return;
-        }
+        await addDoc(collection(db, "passwords"), {
+            site,
+            username,
+            password,
+            userId: user.uid
+        });
 
-        try {
-            await addDoc(collection(db, "passwords"), {
-                site,
-                username,
-                password,
-                userId: userId
-            });
-
-            console.log("Saved ✅");
-
-            form.reset();
-            loadPasswords();
-
-        } catch (error) {
-            console.error("Save error:", error);
-        }
+        form.reset();
+        loadPasswords();
     });
 
-    // LOGOUT
     logoutBtn?.addEventListener('click', () => {
-        window.location.href = "index.html";
+        signOut(auth);
     });
 
     loadPasswords();

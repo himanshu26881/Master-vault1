@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Vault - Dashboard</title>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">
+        <!-- REAL LOGO FROM YOUR MANIFEST FILE -->
+        <img src="icon-192.png" class="logo-img" alt="logo">
+        <h2>MasterVault</h2>
+    </div>
+
+    <button id="logout-btn" class="btn danger-btn">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </button>
+</nav>
+
+<!-- DASHBOARD -->
+<main class="dashboard-container">
+
+    <!-- ADD PASSWORD FORM -->
+    <form id="password-form" class="card">
+
+        <h3>Add New Password</h3>
+
+        <input type="text" id="site-name" placeholder="Website" required>
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="text" id="site-password" placeholder="Password" required>
+
+        <button type="submit" class="btn primary-btn">
+            <i class="fa-solid fa-floppy-disk"></i> Save Password
+        </button>
+
+    </form>
+
+    <!-- PASSWORD LIST -->
+    <div id="passwords-grid" class="grid-container"></div>
+
+</main>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

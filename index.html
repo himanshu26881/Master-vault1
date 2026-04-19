@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MasterVault</title>
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+<div class="login-container">
+
+    <div class="login-card card">
+
+        <!-- LOGO (FIXED) -->
+        <div class="logo">
+            <img src="icon-192.png" class="logo-img" alt="logo">
+            <h2>MasterVault</h2>
+            <p class="subtitle">Secure your passwords smartly</p>
+        </div>
+
+        <!-- SIGNUP -->
+        <form id="setup-form">
+            <h3>Create Account</h3>
+
+            <div class="floating-group">
+                <input type="email" id="email" required>
+                <label>Email</label>
+            </div>
+
+            <div class="floating-group">
+                <input type="password" id="new-master" required>
+                <label>Password</label>
+                <i class="fa-solid fa-eye toggle-pass"></i>
+            </div>
+
+            <button class="btn primary-btn">Sign Up</button>
+        </form>
+
+        <div class="divider">OR</div>
+
+        <!-- LOGIN -->
+        <form id="login-form">
+            <h3>Login</h3>
+
+            <div class="floating-group">
+                <input type="email" id="email-login" required>
+                <label>Email</label>
+            </div>
+
+            <div class="floating-group">
+                <input type="password" id="master-password" required>
+                <label>Password</label>
+                <i class="fa-solid fa-eye toggle-pass"></i>
+            </div>
+
+            <button class="btn primary-btn">Login</button>
+        </form>
+
+    </div>
+</div>
+
+<script type="module" src="script.js"></script>
+
+<script>
+document.querySelectorAll(".toggle-pass").forEach(icon => {
+    icon.addEventListener("click", () => {
+        const input = icon.previousElementSibling.previousElementSibling;
+        input.type = input.type === "password" ? "text" : "password";
+        icon.classList.toggle("fa-eye-slash");
+    });
+});
+</script>
+
+</body>
+</html>
